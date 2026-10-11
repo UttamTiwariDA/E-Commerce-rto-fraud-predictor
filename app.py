@@ -6,58 +6,53 @@ import joblib
 import os
 from datetime import datetime
 from user_agents import parse
-import smtplib
-import random
-from email.message import EmailMessage
 from dotenv import load_dotenv
+
+# OTP के लिए उपयोग होने वाले इम्पोट्स को कमेंट आउट कर दिया गया है
+# import smtplib
+# import random
+# from email.message import EmailMessage
+# import requests
+
 load_dotenv()
-import requests
-
-
-
 app = Flask(__name__)
 
-def send_email_otp(user_email):
-    otp = str(random.randint(100000, 999999))
-    
-    api_key = os.environ.get('BREVO_API_KEY')
-    sender_email = os.environ.get('MY_EMAIL')
+# --- BREVO OTP LOGIC (कमेंट आउट कर दिया गया है) ---
+# def send_email_otp(user_email):
+#     otp = str(random.randint(100000, 999999))
+#     api_key = os.environ.get('BREVO_API_KEY')
+#     sender_email = os.environ.get('MY_EMAIL')
+#     url = "https://api.brevo.com/v3/smtp/email"
+#     headers = {
+#         "accept": "application/json",
+#         "api-key": api_key,
+#         "content-type": "application/json"
+#     }
+#     payload = {
+#         "sender": {"email": sender_email, "name": "Fraud Predictor Tool"},
+#         "to": [{"email": user_email}],
+#         "subject": "E-Commerce Fraud Predictor - Verification OTP",
+#         "htmlContent": f"<html><body><p>Hello,</p><p>Your OTP for verification is: <strong>{otp}</strong></p><p>Do not share it with anyone.</p></body></html>"
+#     }
+#     try:
+#         response = requests.post(url, json=payload, headers=headers)
+#         if response.status_code == 201:
+#             print("OTP sent successfully via Brevo API!")
+#             return otp
+#         else:
+#             print(f"Brevo API Error: {response.text}")
+#             return None
+#     except Exception as e:
+#         print(f"Failed to send OTP via API: {e}")
+#         return None
 
-    url = "https://api.brevo.com/v3/smtp/email"
-    
-    headers = {
-        "accept": "application/json",
-        "api-key": api_key,
-        "content-type": "application/json"
-    }
-    
-
-    payload = {
-        "sender": {"email": sender_email, "name": "Uttam's Fraud Predictor Tool"},
-        "to": [{"email": user_email}],
-        "subject": "Uttam's E-Commerce Fraud Predictor - Verification OTP",
-        "htmlContent": f"<html><body><p>Hello,</p><p>Your OTP for verification is: <strong>{otp}</strong></p><p>Do not share it with anyone. Requested by developer UTTAM.</p></body></html>"
-    }
-
-    try:
-        response = requests.post(url, json=payload, headers=headers)
-        
-        if response.status_code == 201:
-            print("OTP sent successfully via Brevo API!")
-            return otp
-        else:
-            print(f"Brevo API Error: {response.text}")
-            return None
-    except Exception as e:
-        print(f"Failed to send OTP via API: {e}")
-        return None
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-temp_otp_store = {}
+# temp_otp_store = {} # अब इसकी जरूरत नहीं है इसलिए इसे बंद कर दिया है
 
 class OrderData(db.Model):
     id = db.Column(db.Integer, primary_key = True)
@@ -69,7 +64,6 @@ class OrderData(db.Model):
     city_tier = db.Column(db.String(50), nullable = False)
     prediction_result = db.Column(db.String(50), nullable = False)
 
-
 class VisitorLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     ip_address = db.Column(db.String(100))
@@ -79,11 +73,7 @@ class VisitorLog(db.Model):
 with app.app_context():
     db.create_all()
 
-
-
-
 # Loading Translater and Model
-
 preprocessor = joblib.load('preprocessor.pkl')
 model = joblib.load('rto_model.pkl')
 
@@ -94,45 +84,43 @@ def home():
     
     ua_parsed = parse(raw_ua)
     clean_device = f"{ua_parsed.os.family} | {ua_parsed.browser.family} | {ua_parsed.device.family}"
-    new_visitor = VisitorLog(ip_address=user_ip, device_info=clean_device)
+    new_visitor = VisitorLog(ip_address = user_ip, device_info = clean_device)
     db.session.add(new_visitor)
     db.session.commit()
 
     return render_template('index.html')
 
-@app.route('/send_otp', methods=['POST'])
-def send_otp_route():
-    try:
-        data = request.get_json()
-        user_email = data.get('email')
-        if not user_email:
-            return jsonify({'error': 'Email is required'}), 400
-        
-        generated_otp = send_email_otp(user_email)
-        
-        if generated_otp:
-            temp_otp_store[user_email] = generated_otp
-            return jsonify({'Message': "OTP sent successfully to your email, Please check your inbox."},), 200
-        else:
-            return jsonify({'error': 'Failed to send OTP. Please try again later.'}), 500
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+# --- SEND OTP ROUTE (कमेंट आउट कर दिया गया है) ---
+# @app.route('/send_otp', methods=['POST'])
+# def send_otp_route():
+#     try:
+#         data = request.get_json()
+#         user_email = data.get('email')
+#         if not user_email:
+#             return jsonify({'error': 'Email is required'}), 400
+#         generated_otp = send_email_otp(user_email)
+#         if generated_otp:
+#             temp_otp_store[user_email] = generated_otp
+#             return jsonify({'Message': "OTP sent successfully to your email, Please check your inbox."}), 200
+#         else:
+#             return jsonify({'error': 'Failed to send OTP. Please try again later.'}), 500
+#     except Exception as e:
+#         return jsonify({'error': str(e)}), 500
+
+# --- VERIFY OTP ROUTE (कमेंट आउट कर दिया गया है) ---
+# @app.route('/verify_otp', methods=['POST'])
+# def verify_otp():
+#     data = request.get_json()
+#     email = data.get('email')
+#     user_otp = data.get('otp')
+#     if email in temp_otp_store and temp_otp_store[email] == str(user_otp):
+#         del temp_otp_store[email]
+#         return jsonify({"message": "Email Verified Successfully!"}), 200
+#     else:
+#         return jsonify({"error": "Invalid OTP"}), 400
 
 
-
-@app.route('/verify_otp', methods=['POST'])
-def verify_otp():
-    data = request.get_json()
-    email = data.get('email')
-    user_otp = data.get('otp')
-
-    if email in temp_otp_store and temp_otp_store[email] == str(user_otp):
-
-        del temp_otp_store[email]
-        return jsonify({"message": "Email Verified Successfully!"}), 200
-    else:
-        return jsonify({"error": "Invalid OTP"}), 400
-
+# प्रेडिक्शन वाला मेन फंक्शन एक्टिव है
 @app.route('/predict', methods=['POST'])
 def predict():
     if request.method == 'POST':
@@ -168,6 +156,7 @@ def predict():
         db.session.commit()
 
     return jsonify({'prediction_text': result_text})
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host = '0.0.0.0', port = port)
